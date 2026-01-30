@@ -1,0 +1,5 @@
+-- ADD PACK SIZE SCRIPT
+-- RUN THIS IN SUPABASE SQL EDITOR
+
+ALTER TABLE public.ingredients 
+ADD COLUMN IF NOT EXISTS pack_size_oz numeric;
