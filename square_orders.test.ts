@@ -8,28 +8,24 @@ import {
 test('fetches every Square order page in chronological query order', async () => {
     const cursors: Array<string | undefined> = [];
     const ordersApi: OrdersSearchClient = {
-        searchOrders: async request => {
+        search: async request => {
             cursors.push(request.cursor);
 
             if (!request.cursor) {
                 return {
-                    result: {
-                        orders: [{
-                            id: 'ORDER-1',
-                            locationId: 'LOCATION-1'
-                        }],
-                        cursor: 'NEXT-PAGE'
-                    }
+                    orders: [{
+                        id: 'ORDER-1',
+                        locationId: 'LOCATION-1'
+                    }],
+                    cursor: 'NEXT-PAGE'
                 };
             }
 
             return {
-                result: {
-                    orders: [{
-                        id: 'ORDER-2',
-                        locationId: 'LOCATION-1'
-                    }]
-                }
+                orders: [{
+                    id: 'ORDER-2',
+                    locationId: 'LOCATION-1'
+                }]
             };
         }
     };
@@ -49,11 +45,9 @@ test('fetches every Square order page in chronological query order', async () =>
 
 test('stops a repeated Square cursor from causing an infinite loop', async () => {
     const ordersApi: OrdersSearchClient = {
-        searchOrders: async () => ({
-            result: {
-                orders: [],
-                cursor: 'STUCK'
-            }
+        search: async () => ({
+            orders: [],
+            cursor: 'STUCK'
         })
     };
 

@@ -5,9 +5,9 @@ import {
 } from 'square';
 
 export type OrdersSearchClient = {
-    searchOrders(
+    search(
         request: SearchOrdersRequest
-    ): PromiseLike<{ result: SearchOrdersResponse }>;
+    ): PromiseLike<SearchOrdersResponse>;
 };
 
 export async function fetchAllCompletedOrders(
@@ -20,7 +20,7 @@ export async function fetchAllCompletedOrders(
     let cursor: string | undefined;
 
     do {
-        const { result } = await ordersApi.searchOrders({
+        const result = await ordersApi.search({
             cursor,
             limit: 1000,
             query: {

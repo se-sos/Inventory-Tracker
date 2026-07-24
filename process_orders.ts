@@ -1,4 +1,4 @@
-import { Client, Environment } from 'square';
+import { SquareClient, SquareEnvironment } from 'square';
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import {
@@ -13,8 +13,8 @@ dotenv.config();
 // Configuration
 const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
 const SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT === 'production'
-    ? Environment.Production
-    : Environment.Sandbox;
+    ? SquareEnvironment.Production
+    : SquareEnvironment.Sandbox;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
@@ -25,8 +25,8 @@ if (!SQUARE_ACCESS_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     process.exit(1);
 }
 
-const square = new Client({
-    accessToken: SQUARE_ACCESS_TOKEN,
+const square = new SquareClient({
+    token: SQUARE_ACCESS_TOKEN,
     environment: SQUARE_ENVIRONMENT,
 });
 
@@ -41,7 +41,7 @@ async function processOrders() {
     try {
         // 1. Fetch every page of completed orders from Square.
         const orders = await fetchAllCompletedOrders(
-            square.ordersApi,
+            square.orders,
             beginTime,
             endTime
         );

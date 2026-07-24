@@ -1,4 +1,4 @@
-import { Client, Environment } from 'square';
+import { SquareClient, SquareEnvironment } from 'square';
 import * as dotenv from 'dotenv';
 import { createSupabaseAdminClient } from './supabase_admin';
 dotenv.config();
@@ -6,8 +6,8 @@ dotenv.config();
 // Configuration
 const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
 const SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT === 'production'
-    ? Environment.Production
-    : Environment.Sandbox;
+    ? SquareEnvironment.Production
+    : SquareEnvironment.Sandbox;
 
 if (!SQUARE_ACCESS_TOKEN) {
     console.error('Missing required environment variable: SQUARE_ACCESS_TOKEN');
@@ -15,8 +15,8 @@ if (!SQUARE_ACCESS_TOKEN) {
 }
 
 // Initialize Clients
-const square = new Client({
-    accessToken: SQUARE_ACCESS_TOKEN,
+const square = new SquareClient({
+    token: SQUARE_ACCESS_TOKEN,
     environment: SQUARE_ENVIRONMENT,
 });
 
@@ -29,28 +29,25 @@ async function syncInventory() {
         // 1. Fetch all items (Catalog)
         console.log('Fetching catalog...');
         const itemMap = new Map<string, { name: string; sku?: string; square_item_id: string }>();
-        let cursor: string | undefined;
+        const catalog = await square.catalog.list({ types: 'ITEM' });
 
-        do {
-            const { result: catalogResult } = await square.catalogApi.listCatalog(cursor, 'ITEM');
-            cursor = catalogResult.cursor;
-
-            if (catalogResult.objects) {
-                for (const obj of catalogResult.objects) {
-                    if (obj.type === 'ITEM' && obj.itemData && obj.itemData.variations) {
-                        for (const variation of obj.itemData.variations) {
-                            if (variation.id && variation.itemVariationData) {
-                                itemMap.set(variation.id, {
-                                    name: `${obj.itemData.name || 'Unknown'} - ${variation.itemVariationData.name || 'Unnamed'}`,
-                                    sku: variation.itemVariationData.sku || undefined,
-                                    square_item_id: variation.id
-                                });
-                            }
-                        }
+        for await (const obj of catalog) {
+            if (obj.type === 'ITEM' && obj.itemData?.variations) {
+                for (const variation of obj.itemData.variations) {
+                    if (
+                        variation.type === 'ITEM_VARIATION'
+                        && variation.id
+                        && variation.itemVariationData
+                    ) {
+                        itemMap.set(variation.id, {
+                            name: `${obj.itemData.name || 'Unknown'} - ${variation.itemVariationData.name || 'Unnamed'}`,
+                            sku: variation.itemVariationData.sku || undefined,
+                            square_item_id: variation.id
+                        });
                     }
                 }
             }
-        } while (cursor);
+        }
 
         console.log(`Fetched ${itemMap.size} items from catalog.`);
 
@@ -71,23 +68,21 @@ async function syncInventory() {
             console.log(`Fetching batch ${i / BATCH_SIZE + 1} (${batchIds.length} items)...`);
 
             try {
-                const { result: inventoryResult } = await square.inventoryApi.batchRetrieveInventoryCounts({
+                const inventory = await square.inventory.batchGetCounts({
                     catalogObjectIds: batchIds
                 });
 
-                if (inventoryResult.counts) {
-                    for (const count of inventoryResult.counts) {
-                        if (count.catalogObjectId && count.quantity) {
-                            const itemDetails = itemMap.get(count.catalogObjectId);
-                            if (itemDetails) {
-                                updates.push({
-                                    square_item_id: count.catalogObjectId,
-                                    sku: itemDetails.sku,
-                                    name: itemDetails.name,
-                                    quantity: parseInt(count.quantity, 10),
-                                    updated_at: new Date().toISOString()
-                                });
-                            }
+                for await (const count of inventory) {
+                    if (count.catalogObjectId && count.quantity) {
+                        const itemDetails = itemMap.get(count.catalogObjectId);
+                        if (itemDetails) {
+                            updates.push({
+                                square_item_id: count.catalogObjectId,
+                                sku: itemDetails.sku,
+                                name: itemDetails.name,
+                                quantity: parseInt(count.quantity, 10),
+                                updated_at: new Date().toISOString()
+                            });
                         }
                     }
                 }
