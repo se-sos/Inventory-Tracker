@@ -7,6 +7,7 @@ ingredient crosses its configured low-stock threshold.
 ## What the pilot does
 
 - Reads every page of completed Square orders.
+- Stores the order checkpoint in Supabase so restarts do not lose progress.
 - Deducts each recipe's ingredients in one database transaction.
 - Never deducts the same Square order twice.
 - Receives deliveries by pack count and configured pack size.

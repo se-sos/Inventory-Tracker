@@ -1,8 +1,10 @@
 import { Client, Environment } from 'square';
 import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
-import * as fs from 'fs';
-import * as path from 'path';
+import {
+    advanceSquareOrderCheckpoint,
+    getSquareOrderBeginTime
+} from './order_checkpoint';
 import { processOrderAtomically } from './order_processing';
 import { fetchAllCompletedOrders } from './square_orders';
 
@@ -15,9 +17,6 @@ const SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT === 'production'
     : Environment.Sandbox;
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-// State File for tracking last sync time
-const STATE_FILE = path.join(__dirname, 'last_sync_state.json');
 
 if (!SQUARE_ACCESS_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
     console.error(
@@ -33,30 +32,9 @@ const square = new Client({
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-// Helper to get last sync time
-function getLastSyncTime(): string {
-    try {
-        if (fs.existsSync(STATE_FILE)) {
-            const data = JSON.parse(fs.readFileSync(STATE_FILE, 'utf8'));
-            return data.last_sync_time;
-        }
-    } catch (e) {
-        console.log('Could not read state file, defaulting to 1 hour ago.');
-    }
-    // Default to 24 hours ago if no state exists (Daily Catch-up)
-    const date = new Date();
-    date.setHours(date.getHours() - 24);
-    return date.toISOString();
-}
-
-// Helper to save new sync time
-function saveSyncTime(isoTime: string) {
-    fs.writeFileSync(STATE_FILE, JSON.stringify({ last_sync_time: isoTime }, null, 2));
-}
-
 async function processOrders() {
-    const beginTime = getLastSyncTime();
     const endTime = new Date().toISOString(); // Now
+    const beginTime = await getSquareOrderBeginTime(supabase, endTime);
 
     console.log(`[${new Date().toLocaleTimeString()}] Checking orders from ${beginTime} to ${endTime}...`);
 
@@ -87,8 +65,8 @@ async function processOrders() {
             console.log('  > No new orders.');
         }
 
-        // 3. Update Sync Time ONLY if successful
-        saveSyncTime(endTime);
+        // 3. Advance the durable checkpoint only after every order succeeds.
+        await advanceSquareOrderCheckpoint(supabase, endTime);
 
     } catch (error) {
         console.error('  [ERROR] Sync failed this run:', error);
@@ -108,12 +86,6 @@ async function main() {
     }
 
     console.log('--- Sync Complete. Exiting. ---');
-}
-
-// Check for flag to reset time for testing
-if (process.argv.includes('--reset')) {
-    if (fs.existsSync(STATE_FILE)) fs.unlinkSync(STATE_FILE);
-    console.log('Reset sync state.');
 }
 
 main();

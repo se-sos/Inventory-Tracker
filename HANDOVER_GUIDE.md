@@ -28,6 +28,7 @@ npm run alerts
 ```
 
 - `npm start` processes all pages of completed Square orders.
+- The Square checkpoint lives in Supabase, so changing servers does not reset it.
 - `npm run alerts` emails one digest for newly low ingredients.
 - A failed run exits with a non-zero status so the scheduler can report it.
 - Repeating either job is safe.
