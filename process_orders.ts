@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
+import { processOrderAtomically } from './order_processing';
 
 dotenv.config();
 
@@ -12,13 +13,15 @@ const SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT === 'production'
     ? Environment.Production
     : Environment.Sandbox;
 const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
+const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 // State File for tracking last sync time
 const STATE_FILE = path.join(__dirname, 'last_sync_state.json');
 
-if (!SQUARE_ACCESS_TOKEN || !SUPABASE_URL || !SUPABASE_KEY) {
-    console.error('Missing environment variables. Please check .env file.');
+if (!SQUARE_ACCESS_TOKEN || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+    console.error(
+        'Missing SQUARE_ACCESS_TOKEN, SUPABASE_URL, or SUPABASE_SERVICE_ROLE_KEY.'
+    );
     process.exit(1);
 }
 
@@ -27,7 +30,7 @@ const square = new Client({
     environment: SQUARE_ENVIRONMENT,
 });
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 // Helper to get last sync time
 function getLastSyncTime(): string {
@@ -49,9 +52,6 @@ function getLastSyncTime(): string {
 function saveSyncTime(isoTime: string) {
     fs.writeFileSync(STATE_FILE, JSON.stringify({ last_sync_time: isoTime }, null, 2));
 }
-
-// Helper for Delay
-const wait = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function processOrders() {
     const beginTime = getLastSyncTime();
@@ -85,61 +85,16 @@ async function processOrders() {
         if (orders.length > 0) {
             console.log(`  > Found ${orders.length} new orders.`);
 
-            // 2. Process Each Order
+            // 2. Process each order in one idempotent database transaction.
             for (const order of orders) {
-                if (!order.lineItems) continue;
+                const result = await processOrderAtomically(supabase, order);
 
-                for (const item of order.lineItems) {
-                    const squareItemId = item.catalogObjectId;
-                    const quantitySold = parseInt(item.quantity);
-
-                    if (!squareItemId) continue;
-
-                    // A. Find Supabase Menu Item & Linked Recipe
-                    const { data: menuItem } = await supabase
-                        .from('menu_items')
-                        .select('id, item_name, recipe_id')
-                        .eq('square_item_id', squareItemId)
-                        .single();
-
-                    if (!menuItem) continue; // Skip unknown items
-
-                    let recipeId = menuItem.recipe_id;
-
-                    // Fallback: If no recipe_id, try to find one by name (optional, but good for transition)
-                    // Or just skip. For now, we assume migration worked.
-                    if (!recipeId) {
-                        console.log(`    - Warning: Item "${menuItem.item_name}" has no linked recipe.`);
-                        continue;
-                    }
-
-                    // B. Fetch Ingredients for this Recipe
-                    const { data: ingredients } = await supabase
-                        .from('recipe_ingredients')
-                        .select(`
-                            quantity_required_oz,
-                            ingredient:ingredients (id, name, current_stock_oz)
-                        `)
-                        .eq('recipe_id', recipeId);
-
-                    if (!ingredients || ingredients.length === 0) continue;
-
-                    // C. Deduct Inventory
-                    for (const entry of ingredients) {
-                        // Type assertion because of the join
-                        const ingData = entry.ingredient as any;
-                        if (!ingData) continue;
-
-                        const totalDeduct = entry.quantity_required_oz * quantitySold;
-                        const newStock = ingData.current_stock_oz - totalDeduct;
-
-                        await supabase
-                            .from('ingredients')
-                            .update({ current_stock_oz: newStock })
-                            .eq('id', ingData.id);
-
-                        console.log(`    - Deducted ${totalDeduct}oz ${ingData.name} (Now: ${newStock}oz)`);
-                    }
+                if (result === 'processed') {
+                    console.log(`    - Processed order ${order.id}.`);
+                } else if (result === 'duplicate') {
+                    console.log(`    - Skipped duplicate order ${order.id}.`);
+                } else {
+                    console.log(`    - Skipped order ${order.id}; it had no catalog items.`);
                 }
             }
         } else {
@@ -151,6 +106,7 @@ async function processOrders() {
 
     } catch (error) {
         console.error('  [ERROR] Sync failed this run:', error);
+        throw error;
     }
 }
 

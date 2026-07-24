@@ -14,14 +14,17 @@ This project synchronizes Square Orders with a Supabase Inventory Database.
     npm install
     ```
 3.  **Credentials**: You need to create a `.env` file in this folder (it is secret, so it's not included).
-    *   Ask Sean for the `SUPABASE_URL` and `SUPABASE_KEY`.
+    *   Ask Sean for the `SUPABASE_URL` and server-only `SUPABASE_SERVICE_ROLE_KEY`.
     *   Add your `SQUARE_ACCESS_TOKEN` from the Square Developer Dashboard.
     *   Format:
         ```env
         SUPABASE_URL=https://your-project.supabase.co
-        SUPABASE_KEY=your-secret-key
+        SUPABASE_SERVICE_ROLE_KEY=your-server-only-service-role-key
         SQUARE_ACCESS_TOKEN=your-square-token
         ```
+
+4.  **Duplicate Protection**: Run `add_processed_orders.sql` once in the
+    Supabase SQL Editor before starting the order processor.
 
 ## 3. How to Use
 ### Running the Sync Service (Daily)
