@@ -50,3 +50,24 @@ test('treats the database false response as an already processed order', async (
     assert.equal(calls[0].functionName, 'process_square_order');
 });
 
+test('surfaces an unmapped Square item without treating the order as processed', async () => {
+    const supabase: SupabaseRpcClient = {
+        rpc: async () => ({
+            data: null,
+            error: {
+                message: 'Square item UNKNOWN has no mapped recipe ingredients'
+            }
+        })
+    };
+
+    await assert.rejects(
+        () => processOrderAtomically(supabase, {
+            id: 'ORDER-UNMAPPED',
+            lineItems: [{
+                catalogObjectId: 'UNKNOWN',
+                quantity: '1'
+            }]
+        }),
+        /UNKNOWN has no mapped recipe ingredients/
+    );
+});

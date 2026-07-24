@@ -77,6 +77,7 @@ declare
     v_line jsonb;
     v_square_item_id text;
     v_quantity numeric;
+    v_deducted_ingredients integer;
 begin
     if p_square_order_id is null or btrim(p_square_order_id) = '' then
         raise exception 'Square order ID is required';
@@ -135,6 +136,14 @@ begin
           on menu_item.recipe_id = recipe_ingredient.recipe_id
         where menu_item.square_item_id = v_square_item_id
           and ingredient.id = recipe_ingredient.ingredient_id;
+
+        get diagnostics v_deducted_ingredients = row_count;
+
+        if v_deducted_ingredients = 0 then
+            raise exception
+                'Square item % has no mapped recipe ingredients',
+                v_square_item_id;
+        end if;
     end loop;
 
     return true;

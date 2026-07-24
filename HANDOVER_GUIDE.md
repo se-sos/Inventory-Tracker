@@ -59,6 +59,8 @@ Keep the service-role and API keys only on the server running the jobs.
 
 If an order run fails, do not manually change its checkpoint. Fix the reported
 error and run `npm start` again; already processed order IDs will be skipped.
+An error naming an unmapped Square item means its variation ID needs a recipe
+mapping before the run can continue.
 
 If an alert email fails, the affected ingredients are automatically rearmed so
 the next scheduled run can retry.

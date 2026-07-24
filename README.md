@@ -10,6 +10,7 @@ ingredient crosses its configured low-stock threshold.
 - Stores the order checkpoint in Supabase so restarts do not lose progress.
 - Deducts each recipe's ingredients in one database transaction.
 - Never deducts the same Square order twice.
+- Stops on an unmapped Square variation instead of silently losing inventory.
 - Receives deliveries by pack count and configured pack size.
 - Keeps an audit trail of processed orders, stock receipts, and alerts.
 - Suppresses repeat low-stock emails until the ingredient is restocked.
