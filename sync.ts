@@ -1,6 +1,6 @@
 import { Client, Environment } from 'square';
-import { createClient } from '@supabase/supabase-js';
 import * as dotenv from 'dotenv';
+import { createSupabaseAdminClient } from './supabase_admin';
 dotenv.config();
 
 // Configuration
@@ -8,11 +8,9 @@ const SQUARE_ACCESS_TOKEN = process.env.SQUARE_ACCESS_TOKEN;
 const SQUARE_ENVIRONMENT = process.env.SQUARE_ENVIRONMENT === 'production'
     ? Environment.Production
     : Environment.Sandbox;
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
 
-if (!SQUARE_ACCESS_TOKEN || !SUPABASE_URL || !SUPABASE_KEY) {
-    console.error('Missing environment variables. Please check .env file.');
+if (!SQUARE_ACCESS_TOKEN) {
+    console.error('Missing required environment variable: SQUARE_ACCESS_TOKEN');
     process.exit(1);
 }
 
@@ -22,7 +20,7 @@ const square = new Client({
     environment: SQUARE_ENVIRONMENT,
 });
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createSupabaseAdminClient();
 
 async function syncInventory() {
     console.log('Starting inventory sync...');

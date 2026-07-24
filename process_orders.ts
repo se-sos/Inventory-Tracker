@@ -4,6 +4,7 @@ import * as dotenv from 'dotenv';
 import * as fs from 'fs';
 import * as path from 'path';
 import { processOrderAtomically } from './order_processing';
+import { fetchAllCompletedOrders } from './square_orders';
 
 dotenv.config();
 
@@ -60,27 +61,12 @@ async function processOrders() {
     console.log(`[${new Date().toLocaleTimeString()}] Checking orders from ${beginTime} to ${endTime}...`);
 
     try {
-        // 1. Fetch Orders from Square
-        const { result: ordersResult } = await square.ordersApi.searchOrders({
-            locationIds: [], // Empty array = all locations
-            query: {
-                filter: {
-                    stateFilter: { states: ['COMPLETED'] }, // Only processed orders
-                    dateTimeFilter: {
-                        closedAt: {
-                            startAt: beginTime,
-                            endAt: endTime
-                        }
-                    }
-                },
-                sort: {
-                    sortField: 'CLOSED_AT',
-                    sortOrder: 'ASC' // Process oldest first
-                }
-            }
-        });
-
-        const orders = ordersResult?.orders || [];
+        // 1. Fetch every page of completed orders from Square.
+        const orders = await fetchAllCompletedOrders(
+            square.ordersApi,
+            beginTime,
+            endTime
+        );
 
         if (orders.length > 0) {
             console.log(`  > Found ${orders.length} new orders.`);
@@ -110,9 +96,9 @@ async function processOrders() {
     }
 }
 
-// Main Execution - Run Once (Daily Job)
+// Main execution: run once per scheduler invocation.
 async function main() {
-    console.log('--- Starting Daily Inventory Sync ---');
+    console.log('--- Starting Square Order Inventory Run ---');
 
     try {
         await processOrders();
