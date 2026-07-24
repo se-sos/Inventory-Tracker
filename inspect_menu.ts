@@ -1,8 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { createSupabaseAdminClient } from './supabase_admin';
 
-const supabase = createClient(process.env.SUPABASE_URL!, process.env.SUPABASE_KEY!);
+const supabase = createSupabaseAdminClient();
 
 async function listMenuItems() {
     const { data, error } = await supabase

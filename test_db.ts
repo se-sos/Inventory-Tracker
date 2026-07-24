@@ -1,16 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
-import * as dotenv from 'dotenv';
-dotenv.config();
+import { createSupabaseAdminClient } from './supabase_admin';
 
-const SUPABASE_URL = process.env.SUPABASE_URL;
-const SUPABASE_KEY = process.env.SUPABASE_KEY;
-
-if (!SUPABASE_URL || !SUPABASE_KEY) {
-    console.error('Missing Supabase variables in .env');
-    process.exit(1);
-}
-
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+const supabase = createSupabaseAdminClient();
 
 async function testConnection() {
     console.log('Testing Supabase connection...');
