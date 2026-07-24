@@ -68,6 +68,9 @@ npm run alerts
 # Verify the code
 npm test
 npm run typecheck
+
+# Read-only production readiness report
+npm run preflight
 ```
 
 Schedule `npm start` and `npm run alerts` every 15 minutes. Both commands are

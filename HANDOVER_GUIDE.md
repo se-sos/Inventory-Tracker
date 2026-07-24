@@ -27,6 +27,8 @@ npm start
 npm run alerts
 ```
 
+- Run `npm run preflight` after any major menu or deployment change. Every
+  `FAIL` must be corrected before unsupervised processing resumes.
 - `npm start` processes all pages of completed Square orders.
 - The Square checkpoint lives in Supabase, so changing servers does not reset it.
 - `npm run alerts` emails one digest for newly low ingredients.

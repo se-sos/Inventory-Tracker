@@ -8,7 +8,8 @@
     "sync-catalog": "ts-node sync.ts",
     "receive-stock": "ts-node receive_stock.ts",
     "alerts": "ts-node send_low_stock_alerts.ts",
-    "test": "node --test -r ts-node/register order_processing.test.ts order_checkpoint.test.ts square_orders.test.ts stock_receiving.test.ts low_stock_alerts.test.ts",
+    "preflight": "ts-node pilot_preflight.ts",
+    "test": "node --test -r ts-node/register order_processing.test.ts order_checkpoint.test.ts square_orders.test.ts stock_receiving.test.ts low_stock_alerts.test.ts pilot_preflight.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "keywords": [],

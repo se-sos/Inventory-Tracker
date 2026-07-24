@@ -17,6 +17,7 @@ using Ghost Coffee's production Square and Supabase projects.
       accurate.
 - [ ] Configure the server-only environment variables from `.env.example`.
 - [ ] Run `npm test` and `npm run typecheck`.
+- [ ] Run `npm run preflight` and resolve every `FAIL`.
 
 ## Live acceptance test
 
