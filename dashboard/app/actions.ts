@@ -224,7 +224,7 @@ export async function saveIngredientDefinitionAction(
   ) {
     setupRedirect(
       "error",
-      "Stock, threshold, maximum, or pack size is invalid",
+      "Check the stock amounts. They must be zero or greater.",
       "#ingredients",
     );
   }
@@ -232,7 +232,7 @@ export async function saveIngredientDefinitionAction(
   if (thresholdOz > maxStockOz) {
     setupRedirect(
       "error",
-      "The threshold cannot exceed maximum stock",
+      "“Reorder at” cannot be higher than “Fill up to.”",
       "#ingredients",
     );
   }
@@ -240,7 +240,7 @@ export async function saveIngredientDefinitionAction(
   if (ingredientId !== null && !reason) {
     setupRedirect(
       "error",
-      "A reason is required when updating an ingredient",
+      "Add a short note explaining this change.",
       "#ingredients",
     );
   }
@@ -264,7 +264,7 @@ export async function saveIngredientDefinitionAction(
     console.error("[owner-setup] Ingredient save failed", error);
     setupRedirect(
       "error",
-      "Ingredient could not be saved. Check for duplicate names or GFS codes.",
+      "Ingredient could not be saved. Check for the same name or GFS item code.",
       "#ingredients",
     );
   }
@@ -287,11 +287,11 @@ export async function archiveIngredientAction(formData: FormData) {
   if (
     !Number.isInteger(ingredientId)
     || ingredientId <= 0
-    || confirmation !== "ARCHIVE"
+    || confirmation.toUpperCase() !== "STOP"
   ) {
     setupRedirect(
       "error",
-      "Type ARCHIVE to confirm",
+      "Type STOP to confirm.",
       "#ingredients",
     );
   }
@@ -315,7 +315,11 @@ export async function archiveIngredientAction(formData: FormData) {
 
   revalidatePath("/");
   revalidatePath("/setup");
-  setupRedirect("message", "Ingredient archived", "#ingredients");
+  setupRedirect(
+    "message",
+    "Ingredient stopped. Its history is still saved.",
+    "#ingredients",
+  );
 }
 
 export async function saveMenuItemAction(formData: FormData) {
@@ -338,7 +342,7 @@ export async function saveMenuItemAction(formData: FormData) {
   if (!itemName || !squareItemId) {
     setupRedirect(
       "error",
-      "Menu name and Square variation are required",
+      "Add a name and choose the matching Square menu item.",
       "#menu-items",
     );
   }
@@ -358,7 +362,7 @@ export async function saveMenuItemAction(formData: FormData) {
   ) {
     setupRedirect(
       "error",
-      "Every recipe row needs one unique ingredient and a positive amount",
+      "Each recipe row needs a different ingredient and an amount above zero.",
       "#menu-items",
     );
   }
@@ -382,7 +386,7 @@ export async function saveMenuItemAction(formData: FormData) {
     console.error("[owner-setup] Menu item save failed", error);
     setupRedirect(
       "error",
-      "Menu item could not be saved. Refresh Square and check the recipe.",
+      "Food item could not be saved. Refresh the Square menu and check its ingredients.",
       "#menu-items",
     );
   }
@@ -404,11 +408,11 @@ export async function archiveMenuItemAction(formData: FormData) {
   if (
     !Number.isInteger(menuItemId)
     || menuItemId <= 0
-    || confirmation !== "ARCHIVE"
+    || confirmation.toUpperCase() !== "STOP"
   ) {
     setupRedirect(
       "error",
-      "Type ARCHIVE to confirm",
+      "Type STOP to confirm.",
       "#menu-items",
     );
   }
@@ -425,13 +429,17 @@ export async function archiveMenuItemAction(formData: FormData) {
     console.error("[owner-setup] Menu item archive failed", error);
     setupRedirect(
       "error",
-      "Menu item could not be archived",
+      "Food item could not be stopped. Please try again.",
       "#menu-items",
     );
   }
 
   revalidatePath("/setup");
-  setupRedirect("message", "Menu item archived", "#menu-items");
+  setupRedirect(
+    "message",
+    "Food item stopped. Its recipe and history are still saved.",
+    "#menu-items",
+  );
 }
 
 export async function refreshSquareCatalogAction() {
@@ -445,7 +453,7 @@ export async function refreshSquareCatalogAction() {
     console.error("[owner-setup] Square catalog read failed", error);
     setupRedirect(
       "error",
-      "Square catalog could not be refreshed. Check the Pi connection.",
+      "Square menu could not be refreshed. Check the store connection.",
       "#menu-items",
     );
   }
@@ -462,7 +470,7 @@ export async function refreshSquareCatalogAction() {
     console.error("[owner-setup] Square catalog cache failed", error);
     setupRedirect(
       "error",
-      "Square catalog could not be saved",
+      "Square menu could not be saved.",
       "#menu-items",
     );
   }
@@ -470,7 +478,7 @@ export async function refreshSquareCatalogAction() {
   revalidatePath("/setup");
   setupRedirect(
     "message",
-    `Square catalog refreshed with ${Number(data)} variations`,
+    `Square menu refreshed with ${Number(data)} choices`,
     "#menu-items",
   );
 }

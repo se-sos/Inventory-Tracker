@@ -46,14 +46,14 @@ function dateTime(value: string | null): string {
 
 function statusLabel(item: InventoryItem): string {
   if (item.status === "reorder") {
-    return "Reorder";
+    return "Order soon";
   }
 
   if (item.status === "not-configured") {
-    return "Set up";
+    return "Needs settings";
   }
 
-  return "Healthy";
+  return "Looks good";
 }
 
 export default async function Home({
@@ -114,7 +114,7 @@ export default async function Home({
         </div>
         <div className="topbar-actions">
           <Link className="secondary-button" href="/setup">
-            Owner setup
+            Inventory setup
           </Link>
           <div className="sync-copy">
             <span className="sync-dot" aria-hidden="true" />
@@ -131,11 +131,11 @@ export default async function Home({
 
       <section className="intro">
         <div>
-          <p className="eyebrow">Owner overview</p>
-          <h2>Know what needs attention before service.</h2>
+          <p className="eyebrow">Today’s inventory</p>
+          <h2>See what needs attention before service.</h2>
           <p>
-            Estimated ingredient levels based on recorded deliveries,
-            physical counts, and completed Square food orders.
+            Stock estimates use recorded deliveries, physical counts, and
+            completed Square food sales.
           </p>
         </div>
         <p className="updated">
@@ -143,18 +143,26 @@ export default async function Home({
         </p>
       </section>
 
-      {message && <div className="notice success">{message}</div>}
-      {error && <div className="notice error">{error}</div>}
+      {message && (
+        <div className="notice success" role="status">
+          <strong>Done.</strong> {message}
+        </div>
+      )}
+      {error && (
+        <div className="notice error" role="alert">
+          <strong>Nothing changed.</strong> {error}
+        </div>
+      )}
       {readOnly && (
-        <div className="notice info">
-          <strong>Read-only demo mode.</strong> Inventory updates and
-          deliveries are locked, so this view cannot change live data.
+        <div className="notice info" role="status">
+          <strong>Safe preview.</strong> You can explore the dashboard, but
+          inventory changes and deliveries are locked.
         </div>
       )}
 
       <section className="metric-grid" aria-label="Inventory summary">
         <article className="metric-card metric-primary">
-          <span>Needs reorder</span>
+          <span>Order soon</span>
           <strong>{reorderItems.length}</strong>
           <p>
             {reorderItems.length
@@ -163,7 +171,7 @@ export default async function Home({
           </p>
         </article>
         <article className="metric-card">
-          <span>Inventory health</span>
+          <span>Stock looking good</span>
           <strong>{healthPercent}%</strong>
           <div className="health-track" aria-hidden="true">
             <span style={{ width: `${healthPercent}%` }} />
@@ -171,7 +179,7 @@ export default async function Home({
           <p>{healthyCount} configured ingredients are healthy</p>
         </article>
         <article className="metric-card">
-          <span>Tracked ingredients</span>
+          <span>Ingredients tracked</span>
           <strong>{data.items.length}</strong>
           <p>
             {data.items.length - configuredItems.length} still need
@@ -184,7 +192,10 @@ export default async function Home({
         <div className="section-heading">
           <div>
             <p className="eyebrow">Priority list</p>
-            <h2>Reorder recommendations</h2>
+            <h2>What to reorder</h2>
+            <p className="section-help">
+              Suggested amounts refill each ingredient to its saved maximum.
+            </p>
           </div>
           <a className="secondary-button" href="#all-inventory">
             View all inventory
@@ -235,14 +246,14 @@ export default async function Home({
           <div className="section-heading table-heading">
             <div>
               <p className="eyebrow">Complete list</p>
-              <h2>All inventory</h2>
+              <h2>All ingredients</h2>
             </div>
             <form className="inventory-tools">
               <input
                 aria-label="Search ingredients"
                 defaultValue={single(params.q)}
                 name="q"
-                placeholder="Search ingredients"
+                placeholder="Find an ingredient"
                 type="search"
               />
               <select
@@ -250,10 +261,10 @@ export default async function Home({
                 defaultValue={filter}
                 name="filter"
               >
-                <option value="all">All status</option>
-                <option value="reorder">Reorder</option>
-                <option value="ok">Healthy</option>
-                <option value="not-configured">Needs setup</option>
+                <option value="all">Show all</option>
+                <option value="reorder">Order soon</option>
+                <option value="ok">Stock looks good</option>
+                <option value="not-configured">Needs settings</option>
               </select>
               <button className="compact-button" type="submit">Apply</button>
             </form>
@@ -308,9 +319,9 @@ export default async function Home({
 
         <aside className="side-column">
           <section className="receive-card">
-            <p className="eyebrow">Stock intake</p>
+            <p className="eyebrow">Delivery</p>
             <h2>Record a delivery</h2>
-            <p>Add received packs using the saved GFS pack size.</p>
+            <p>Choose what arrived and enter the number of packs.</p>
             <form action={receiveStockAction} className="stacked-form">
               <label>
                 Ingredient
@@ -344,7 +355,7 @@ export default async function Home({
             {receivingItems.length < data.items.length && (
               <small className="form-note">
                 {data.items.length - receivingItems.length} ingredients need
-                GFS and pack-size settings before delivery intake is available.
+                a GFS item code and pack size before they can be received here.
               </small>
             )}
           </section>
@@ -352,7 +363,7 @@ export default async function Home({
           <section className="activity-card">
             <div className="section-heading">
               <div>
-                <p className="eyebrow">Audit trail</p>
+                <p className="eyebrow">Change history</p>
                 <h2>Recent activity</h2>
               </div>
             </div>
@@ -372,7 +383,10 @@ export default async function Home({
                 ))}
               </ol>
             ) : (
-              <p className="muted">No owner activity recorded yet.</p>
+              <div className="empty-guidance compact">
+                <strong>No changes yet.</strong>
+                <p>Inventory edits and deliveries will appear here.</p>
+              </div>
             )}
           </section>
         </aside>
@@ -388,7 +402,7 @@ export default async function Home({
           >
             <div className="modal-heading">
               <div>
-                <p className="eyebrow">Inventory correction</p>
+                <p className="eyebrow">Update inventory</p>
                 <h2 id="edit-title">{editingItem.name}</h2>
               </div>
               <Link className="modal-close" href="/#all-inventory" aria-label="Close">
@@ -402,8 +416,9 @@ export default async function Home({
                 value={editingItem.id}
               />
               <div className="form-row">
-                <label>
-                  Current stock (oz)
+                <label className="field-number">
+                  On hand
+                  <span className="field-help">Current ounces.</span>
                   <input
                     defaultValue={editingItem.currentStockOz}
                     min="0"
@@ -413,8 +428,9 @@ export default async function Home({
                     type="number"
                   />
                 </label>
-                <label>
-                  Restock threshold (oz)
+                <label className="field-number">
+                  Reorder at
+                  <span className="field-help">Alert at this many ounces.</span>
                   <input
                     defaultValue={editingItem.thresholdOz ?? ""}
                     min="0"
@@ -425,8 +441,9 @@ export default async function Home({
                   />
                 </label>
               </div>
-              <label>
-                Maximum capacity (oz)
+              <label className="field-number">
+                Fill up to
+                <span className="field-help">Maximum storage in ounces.</span>
                 <input
                   defaultValue={editingItem.maxStockOz ?? ""}
                   min="0.01"
@@ -436,11 +453,14 @@ export default async function Home({
                   type="number"
                 />
               </label>
-              <label>
-                Reason for change
+              <label className="field-reason">
+                Why are you changing this?
+                <span className="field-help">
+                  This note is saved in recent activity.
+                </span>
                 <textarea
                   name="reason"
-                  placeholder="Physical count, corrected threshold, spoilage…"
+                  placeholder="Example: Counted stock after closing"
                   required
                   rows={3}
                 />

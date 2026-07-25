@@ -82,20 +82,24 @@ export function RecipeEditor({
   return (
     <>
       <label>
-        Square menu variation
+        Square menu item
+        <span className="field-help">
+          Choose the exact item a customer buys.
+        </span>
         <select
+          className="field-select"
           defaultValue={currentSquareItemId}
           name="squareItemId"
           required
         >
-          <option value="">Choose from Square</option>
+          <option value="">Choose a Square menu item</option>
           {currentSquareItemId
             && !catalogVariations.some(
               (variation) => variation.id === currentSquareItemId,
             )
             && (
               <option value={currentSquareItemId}>
-                {currentSquareLabel || currentSquareItemId} (current mapping)
+                {currentSquareLabel || "Saved Square item"} (currently used)
               </option>
             )}
           {catalogVariations.map((variation) => (
@@ -108,7 +112,10 @@ export function RecipeEditor({
       </label>
 
       <fieldset className="recipe-fieldset">
-        <legend>Ingredients used in one sale</legend>
+        <legend>What one sale uses</legend>
+        <p className="fieldset-help">
+          Add each ingredient and the ounces used for one item.
+        </p>
         <div className="recipe-lines">
           {lines.map((line) => (
             <div className="recipe-line" key={line.key}>
@@ -124,7 +131,7 @@ export function RecipeEditor({
                   required
                   value={line.ingredientId || ""}
                 >
-                  <option value="">Choose ingredient</option>
+                  <option value="">Choose an ingredient</option>
                   {ingredients.map((ingredient) => (
                     <option key={ingredient.id} value={ingredient.id}>
                       {ingredient.name}
@@ -172,11 +179,11 @@ export function RecipeEditor({
       </fieldset>
 
       <div className="deduction-preview">
-        <strong>Validation preview</strong>
+        <strong>What one sale removes</strong>
         <p>
           {preview.length
-            ? `One completed sale will deduct ${preview.join(", ")}.`
-            : "Add valid ingredient amounts to preview the deduction."}
+            ? `A completed sale removes ${preview.join(", ")} from stock.`
+            : "Choose ingredients and enter ounces to see the result."}
         </p>
       </div>
     </>
