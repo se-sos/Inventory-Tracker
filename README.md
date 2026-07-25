@@ -4,6 +4,11 @@ This service turns completed Square orders into ingredient-level inventory
 deductions in Supabase. It also records deliveries and sends one email when an
 ingredient crosses its configured low-stock threshold.
 
+The private owner dashboard lives in `dashboard/`. It is designed to run on a
+Raspberry Pi at the store and provides reorder recommendations, physical-count
+corrections, delivery intake, and an audit trail. Raspberry Pi service examples
+are in `deploy/raspberry-pi/`.
+
 ## What the pilot does
 
 - Reads every page of completed Square orders.

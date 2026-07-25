@@ -1,0 +1,16 @@
+[Unit]
+Description=Ghost Coffee completed-order inventory sync
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=ghost-inventory
+Group=ghost-inventory
+WorkingDirectory=/opt/ghost-inventory/app
+EnvironmentFile=/etc/ghost-inventory/sync.env
+ExecStart=/usr/bin/npm start
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true

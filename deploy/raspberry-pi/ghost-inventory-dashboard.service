@@ -1,0 +1,22 @@
+[Unit]
+Description=Ghost Coffee owner inventory dashboard
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=ghost-inventory
+Group=ghost-inventory
+WorkingDirectory=/opt/ghost-inventory/app/dashboard
+EnvironmentFile=/etc/ghost-inventory/dashboard.env
+ExecStart=/usr/bin/npm start
+Restart=on-failure
+RestartSec=5
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/ghost-inventory/app/dashboard/.next
+
+[Install]
+WantedBy=multi-user.target
