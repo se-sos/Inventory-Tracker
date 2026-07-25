@@ -22,7 +22,17 @@ creates, changes, or deletes anything in Square.
 
 1. Keep `DASHBOARD_ALLOW_WRITES=false`.
 2. Stop the Raspberry Pi Square sync timer during the migration window.
-3. In Supabase, confirm the expected starting scope:
+3. Capture a read-only JSON backup and verify the exact Supabase project:
+
+   ```powershell
+   npm run owner-setup:backup -- mbexznuuckcikntwqzuh
+   ```
+
+   Store the printed backup path, SHA-256 digest, and counts in the rollout
+   record. The backup is ignored by Git and contains production data, so do not
+   upload or commit it.
+
+4. In Supabase, confirm the expected starting scope:
 
    ```sql
    select count(*) as ingredients from public.ingredients;
@@ -33,25 +43,40 @@ creates, changes, or deletes anything in Square.
    The current pilot expects 30 ingredients and 12 menu items. Record the
    recipe-line count before continuing.
 
-4. Run `add_owner_setup_controls.sql` in the Supabase SQL Editor.
+5. Run `add_owner_setup_controls.sql` in the Supabase SQL Editor.
    The file is one transaction. A failed validation rolls back the complete
    migration instead of leaving half-installed controls.
-5. Run the same count query again. Ingredient, menu-item, and recipe-line
+6. Run the same count query again. Ingredient, menu-item, and recipe-line
    counts must be unchanged.
-6. Validate the new database rules:
+7. Validate the new database rules:
 
    ```sql
    select * from public.validate_inventory_setup();
    ```
 
-7. Deploy the application while it remains read-only. Sign in and review
+   Then run `verify_owner_setup_rollout.sql`. It verifies database role
+   permissions, validation, duplicate rejection, archive behavior, and audit
+   creation inside a transaction that ends with `rollback`, so its temporary
+   test rows cannot remain in production.
+
+   Finally, run the read-only live postflight:
+
+   ```powershell
+   npm run owner-setup:postflight -- mbexznuuckcikntwqzuh
+   ```
+
+   It confirms the live counts, active flags, validation results, empty audit
+   trail, uninitialized Square sales checkpoint, zero processed orders, and
+   GET-only Square catalog access.
+
+8. Deploy the application while it remains read-only. Sign in and review
    `/setup`.
-8. Add `SQUARE_ENVIRONMENT=production` and the server-only
+9. Add `SQUARE_ENVIRONMENT=production` and the server-only
    `SQUARE_ACCESS_TOKEN` to `/etc/ghost-inventory/dashboard.env`.
-9. Only after the owner approves the visible data, set
+10. Only after the owner approves the visible data, set
    `DASHBOARD_ALLOW_WRITES=true` and restart the dashboard service.
-10. Refresh the Square catalog from Owner Setup, then resolve any warnings.
-11. Re-enable the Square sync timer after validation passes.
+11. Refresh the Square catalog from Owner Setup, then resolve any warnings.
+12. Re-enable the Square sync timer after validation passes.
 
 ## Operational rollback
 

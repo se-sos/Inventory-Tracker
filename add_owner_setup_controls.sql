@@ -810,11 +810,11 @@ security invoker
 set search_path = public
 as $$
     select
-        'ingredient-stock-' || ingredient.id,
-        'error',
-        'ingredient',
-        ingredient.id::text,
-        ingredient.name || ' has invalid current stock.'
+        'ingredient-stock-' || ingredient.id as issue_key,
+        'error'::text as severity,
+        'ingredient'::text as area,
+        ingredient.id::text as entity_id,
+        ingredient.name || ' has invalid current stock.' as message
     from public.ingredients as ingredient
     where ingredient.is_active
       and (
