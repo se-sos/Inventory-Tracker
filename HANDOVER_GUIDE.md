@@ -49,6 +49,11 @@ ALERT_EMAIL_TO=owner@example.com
 
 Keep the service-role and API keys only on the server running the jobs.
 
+Before the first live order run, physically count the tracked ingredients,
+save the starting values, and run `npm run initialize-sync` once. The processor
+will refuse to run without this deliberate baseline so older orders are not
+deducted from a count that already reflects them.
+
 ## Supabase records
 
 - `processed_orders`: proves each Square order was handled once.
@@ -61,11 +66,16 @@ Keep the service-role and API keys only on the server running the jobs.
 
 If an order run fails, do not manually change its checkpoint. Fix the reported
 error and run `npm start` again; already processed order IDs will be skipped.
-An error naming an unmapped Square item means its variation ID needs a recipe
-mapping before the run can continue.
+Square items outside the configured food `menu_items` tracking scope are
+ignored. An error naming a tracked Square item means its configured recipe is
+incomplete and must be corrected before processing can continue.
 
 If an alert email fails, the affected ingredients are automatically rearmed so
 the next scheduled run can retry.
+
+For the owner report, each tracked ingredient needs a real
+`low_stock_threshold_oz` and `max_stock_oz`. When stock is at or below the
+threshold, the recommended amount to add is `max_stock_oz - current_stock_oz`.
 
 Never run `reset_inventory.ts`, `seed_coffee.ts`, or `delete_item.ts` against
 production. They are legacy maintenance utilities, not staff workflows.

@@ -10,10 +10,14 @@ ingredient crosses its configured low-stock threshold.
 - Stores the order checkpoint in Supabase so restarts do not lose progress.
 - Deducts each recipe's ingredients in one database transaction.
 - Never deducts the same Square order twice.
-- Stops on an unmapped Square variation instead of silently losing inventory.
+- Ignores Square items outside Ghost Coffee's configured tracking scope.
+- Stops if a tracked Square item is missing its recipe ingredients.
 - Receives deliveries by pack count and configured pack size.
 - Keeps an audit trail of processed orders, stock receipts, and alerts.
 - Suppresses repeat low-stock emails until the ingredient is restocked.
+- Calculates which ingredients are below their restock threshold and how much
+  must be added to reach the configured maximum.
+- Records owner-entered stock, threshold, and maximum changes.
 
 ## Install
 
@@ -29,32 +33,62 @@ in a browser, screenshot, or committed file.
 
 ## Install the Supabase changes
 
-Run these files in the Supabase SQL Editor in this order:
+For a clean installation, run these files in the Supabase SQL Editor in this
+order:
 
-1. `add_processed_orders.sql`
-2. `add_stock_receiving.sql`
-3. `add_low_stock_alerts.sql`
+1. `add_pack_size.sql`
+2. `add_processed_orders.sql`
+3. `add_stock_receiving.sql`
+4. `add_low_stock_alerts.sql`
+5. `add_owner_inventory_controls.sql`
+6. `harden_inventory_mappings.sql`
+
+For the existing Ghost Coffee database, where the first three pilot migrations
+are already installed, run:
+
+1. `allow_untracked_square_items.sql`
+2. `add_owner_inventory_controls.sql`
+3. `harden_inventory_mappings.sql`
 
 The existing `ingredients`, `menu_items`, `recipes`, and
 `recipe_ingredients` tables must already exist.
 
-Then configure each monitored ingredient:
+Pack receiving is optional. Every tracked ingredient does require a real
+restock threshold and maximum for the owner report:
 
 ```sql
 update public.ingredients
 set
   pack_size_oz = 80,
-  low_stock_threshold_oz = 160
+  low_stock_threshold_oz = 160,
+  max_stock_oz = 320
 where gfs_code = 'BEAN-001';
 ```
 
-Use the real pack size and reorder threshold for each ingredient.
+Use Ghost Coffee's real values. Missing receiving metadata does not stop Square
+order deductions, but missing thresholds or maximums will block pilot
+readiness.
+
+## Establish the starting point
+
+The first sync deliberately refuses to guess how far back it should read.
+
+1. Physically count the starting ingredient inventory.
+2. Save those counts, restock thresholds, and maximums in Supabase.
+3. Run `npm run initialize-sync` once.
+4. Complete the controlled test order from `PILOT_CHECKLIST.md`.
+
+This prevents orders already reflected in the physical count from being
+deducted a second time.
 
 ## Commands
 
 ```bash
 # Process completed Square orders once
 npm start
+
+# Start tracking orders from now after the physical stock count
+npm run initialize-sync
 
 # Refresh Square's catalog-level inventory mirror
 npm run sync-catalog
@@ -86,6 +120,8 @@ recipes and deliveries. Ghost Coffee's low-stock decisions should use
 
 ## Launch status
 
-Local automated verification is green. Production still requires the SQL files
-to be applied, real ingredient pack sizes and thresholds to be configured, and
-the live checks in `PILOT_CHECKLIST.md` to pass.
+Local automated verification is green. Production still requires the pending
+SQL files to be applied, starting stock and owner reorder settings to be
+confirmed, the sync baseline to be initialized, and the live checks in
+`PILOT_CHECKLIST.md` to pass. The owner web dashboard and daily digest are the
+next product phase.

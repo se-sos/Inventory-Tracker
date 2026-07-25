@@ -1,5 +1,4 @@
 const CHECKPOINT_NAME = 'square-completed-orders';
-const DEFAULT_LOOKBACK_HOURS = 24;
 
 type RpcResult = {
     data: unknown;
@@ -35,10 +34,11 @@ export async function getSquareOrderBeginTime(
     }
 
     if (data === null) {
-        return new Date(
-            parsedEndTime.getTime()
-            - DEFAULT_LOOKBACK_HOURS * 60 * 60 * 1000
-        ).toISOString();
+        throw new Error(
+            'Square order tracking has not been initialized. '
+            + 'Record the physical starting inventory, then run '
+            + '`npm run initialize-sync` before processing orders.'
+        );
     }
 
     if (typeof data !== 'string') {
@@ -57,6 +57,42 @@ export async function getSquareOrderBeginTime(
     }
 
     return checkpoint.toISOString();
+}
+
+export async function initializeSquareOrderCheckpoint(
+    supabase: CheckpointSupabaseClient,
+    checkpointAt: string
+): Promise<void> {
+    const parsedCheckpoint = new Date(checkpointAt);
+
+    if (Number.isNaN(parsedCheckpoint.getTime())) {
+        throw new Error(
+            `Invalid Square checkpoint time: ${checkpointAt}`
+        );
+    }
+
+    const { data, error } = await supabase.rpc(
+        'get_integration_checkpoint',
+        { p_name: CHECKPOINT_NAME }
+    );
+
+    if (error) {
+        throw new Error(
+            `Failed to read Square order checkpoint: ${error.message ?? 'unknown database error'}`
+        );
+    }
+
+    if (data !== null) {
+        throw new Error(
+            'Square order tracking is already initialized. '
+            + 'Refusing to replace the existing checkpoint.'
+        );
+    }
+
+    await advanceSquareOrderCheckpoint(
+        supabase,
+        parsedCheckpoint.toISOString()
+    );
 }
 
 export async function advanceSquareOrderCheckpoint(

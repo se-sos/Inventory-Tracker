@@ -32,6 +32,24 @@ const square = new SquareClient({
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
+async function getTrackedSquareItemIds(): Promise<Set<string>> {
+    const { data, error } = await supabase
+        .from('menu_items')
+        .select('square_item_id');
+
+    if (error) {
+        throw new Error(
+            `Could not load tracked menu items: ${error.message}`
+        );
+    }
+
+    return new Set(
+        (data ?? [])
+            .map(row => row.square_item_id)
+            .filter((id): id is string => Boolean(id?.trim()))
+    );
+}
+
 async function processOrders() {
     const endTime = new Date().toISOString(); // Now
     const beginTime = await getSquareOrderBeginTime(supabase, endTime);
@@ -45,20 +63,34 @@ async function processOrders() {
             beginTime,
             endTime
         );
+        const trackedSquareItemIds = await getTrackedSquareItemIds();
+
+        if (trackedSquareItemIds.size === 0) {
+            throw new Error(
+                'No tracked food menu items are configured in Supabase'
+            );
+        }
 
         if (orders.length > 0) {
             console.log(`  > Found ${orders.length} new orders.`);
 
             // 2. Process each order in one idempotent database transaction.
             for (const order of orders) {
-                const result = await processOrderAtomically(supabase, order);
+                const result = await processOrderAtomically(
+                    supabase,
+                    order,
+                    trackedSquareItemIds
+                );
 
                 if (result === 'processed') {
                     console.log(`    - Processed order ${order.id}.`);
                 } else if (result === 'duplicate') {
                     console.log(`    - Skipped duplicate order ${order.id}.`);
                 } else {
-                    console.log(`    - Skipped order ${order.id}; it had no catalog items.`);
+                    console.log(
+                        `    - Skipped order ${order.id}; `
+                        + 'it had no tracked food items.'
+                    );
                 }
             }
         } else {

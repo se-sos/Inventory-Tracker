@@ -6,17 +6,21 @@ using Ghost Coffee's production Square and Supabase projects.
 ## Before testing
 
 - [ ] Create a backup or export of the current Supabase inventory tables.
-- [ ] Run `add_processed_orders.sql`.
-- [ ] Run `add_stock_receiving.sql`.
-- [ ] Run `add_low_stock_alerts.sql`.
+- [ ] Confirm the three previously installed pilot migrations are present.
+- [ ] Run `allow_untracked_square_items.sql`.
+- [ ] Run `add_owner_inventory_controls.sql`.
+- [ ] Run `harden_inventory_mappings.sql`.
 - [ ] Set `pack_size_oz` for every ingredient staff may receive.
-- [ ] Set `low_stock_threshold_oz` for every ingredient that needs alerts.
-- [ ] Confirm every active Square variation ID maps to the correct
-      `menu_items.square_item_id`.
-- [ ] Confirm every active menu item has a recipe and all recipe quantities are
-      accurate.
+- [ ] Set a real `low_stock_threshold_oz` and `max_stock_oz` for every tracked
+      ingredient.
+- [ ] Confirm every menu item Ghost Coffee chose to track maps to the correct
+      `menu_items.square_item_id`. Other Square items are intentionally ignored.
+- [ ] Confirm every tracked menu item has a recipe and all recipe quantities
+      are accurate.
 - [ ] Configure the server-only environment variables from `.env.example`.
 - [ ] Run `npm test` and `npm run typecheck`.
+- [ ] Physically count inventory and save every starting `current_stock_oz`.
+- [ ] Immediately run `npm run initialize-sync` once after saving the count.
 - [ ] Run `npm run preflight` and resolve every `FAIL`.
 
 ## Live acceptance test

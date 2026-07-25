@@ -29,6 +29,57 @@ test('rejects invalid quantities before touching the database', () => {
     );
 });
 
+test('keeps only configured food items from a mixed Square order', () => {
+    assert.deepEqual(
+        buildOrderLinePayload(
+            [
+                { catalogObjectId: 'TRACKED-FOOD', quantity: '2' },
+                { catalogObjectId: 'IGNORED-DRINK', quantity: '1' }
+            ],
+            new Set(['TRACKED-FOOD'])
+        ),
+        [{ square_item_id: 'TRACKED-FOOD', quantity: 2 }]
+    );
+});
+
+test('skips an order containing only untracked Square items', async () => {
+    let rpcCalls = 0;
+    const supabase: SupabaseRpcClient = {
+        rpc: async () => {
+            rpcCalls += 1;
+            return { data: true, error: null };
+        }
+    };
+
+    const result = await processOrderAtomically(
+        supabase,
+        {
+            id: 'DRINK-ONLY-ORDER',
+            lineItems: [{
+                catalogObjectId: 'IGNORED-DRINK',
+                quantity: '1'
+            }]
+        },
+        new Set(['TRACKED-FOOD'])
+    );
+
+    assert.equal(result, 'skipped');
+    assert.equal(rpcCalls, 0);
+});
+
+test('ignores malformed quantities on untracked Square items', () => {
+    assert.deepEqual(
+        buildOrderLinePayload(
+            [{
+                catalogObjectId: 'IGNORED-DRINK',
+                quantity: 'not-a-number'
+            }],
+            new Set(['TRACKED-FOOD'])
+        ),
+        []
+    );
+});
+
 test('treats the database false response as an already processed order', async () => {
     const calls: Array<Record<string, unknown>> = [];
     const supabase: SupabaseRpcClient = {
@@ -50,24 +101,28 @@ test('treats the database false response as an already processed order', async (
     assert.equal(calls[0].functionName, 'process_square_order');
 });
 
-test('surfaces an unmapped Square item without treating the order as processed', async () => {
+test('surfaces a tracked Square item with an incomplete recipe', async () => {
     const supabase: SupabaseRpcClient = {
         rpc: async () => ({
             data: null,
             error: {
-                message: 'Square item UNKNOWN has no mapped recipe ingredients'
+                message: 'Tracked Square item TRACKED has no mapped recipe ingredients'
             }
         })
     };
 
     await assert.rejects(
-        () => processOrderAtomically(supabase, {
-            id: 'ORDER-UNMAPPED',
-            lineItems: [{
-                catalogObjectId: 'UNKNOWN',
-                quantity: '1'
-            }]
-        }),
-        /UNKNOWN has no mapped recipe ingredients/
+        () => processOrderAtomically(
+            supabase,
+            {
+                id: 'ORDER-UNMAPPED',
+                lineItems: [{
+                    catalogObjectId: 'TRACKED',
+                    quantity: '1'
+                }]
+            },
+            new Set(['TRACKED'])
+        ),
+        /TRACKED has no mapped recipe ingredients/
     );
 });

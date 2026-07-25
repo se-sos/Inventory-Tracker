@@ -8,6 +8,7 @@ type IngredientRow = {
     current_stock_oz: number;
     pack_size_oz: number | null;
     low_stock_threshold_oz: number | null;
+    max_stock_oz: number | null;
 };
 
 type MenuItemRow = {
@@ -18,8 +19,8 @@ type MenuItemRow = {
 };
 
 type RecipeIngredientRow = {
-    recipe_id: string;
-    ingredient_id: number;
+    recipe_id: string | null;
+    ingredient_id: number | null;
     quantity_required_oz: number;
 };
 
@@ -28,6 +29,7 @@ export type PreflightInput = {
     menuItems: MenuItemRow[];
     recipeIngredients: RecipeIngredientRow[];
     squareVariationIds: string[];
+    checkpointAt: string | null;
 };
 
 export type PreflightCheck = {
@@ -45,29 +47,56 @@ export function evaluatePilotConfiguration(
     input: PreflightInput
 ): PreflightCheck[] {
     const checks: PreflightCheck[] = [];
-    const missingCodes = input.ingredients.filter(
+    const trackedIngredientIds = new Set(
+        input.recipeIngredients
+            .map(link => link.ingredient_id)
+            .filter((id): id is number => id !== null)
+    );
+    const trackedIngredients = input.ingredients.filter(
+        ingredient => trackedIngredientIds.has(ingredient.id)
+    );
+    const missingCodes = trackedIngredients.filter(
         ingredient => !ingredient.gfs_code?.trim()
     );
-    const missingPackSizes = input.ingredients.filter(
+    const missingPackSizes = trackedIngredients.filter(
         ingredient => (
             ingredient.pack_size_oz === null
+            || !Number.isFinite(ingredient.pack_size_oz)
             || ingredient.pack_size_oz <= 0
         )
     );
-    const missingThresholds = input.ingredients.filter(
+    const missingThresholds = trackedIngredients.filter(
         ingredient => (
             ingredient.low_stock_threshold_oz === null
+            || !Number.isFinite(ingredient.low_stock_threshold_oz)
             || ingredient.low_stock_threshold_oz < 0
         )
     );
-    const invalidStock = input.ingredients.filter(
-        ingredient => !Number.isFinite(ingredient.current_stock_oz)
+    const invalidMaximums = trackedIngredients.filter(
+        ingredient => (
+            ingredient.max_stock_oz === null
+            || !Number.isFinite(ingredient.max_stock_oz)
+            || ingredient.max_stock_oz <= 0
+            || (
+                ingredient.low_stock_threshold_oz !== null
+                && ingredient.max_stock_oz
+                    < ingredient.low_stock_threshold_oz
+            )
+        )
+    );
+    const invalidStock = trackedIngredients.filter(
+        ingredient => (
+            !Number.isFinite(ingredient.current_stock_oz)
+            || ingredient.current_stock_oz < 0
+        )
     );
     const incompleteMenuItems = input.menuItems.filter(
         item => !item.square_item_id?.trim() || !item.recipe_id
     );
     const recipeIdsWithIngredients = new Set(
-        input.recipeIngredients.map(link => link.recipe_id)
+        input.recipeIngredients
+            .map(link => link.recipe_id)
+            .filter((id): id is string => id !== null)
     );
     const emptyRecipes = input.menuItems.filter(
         item => (
@@ -77,17 +106,54 @@ export function evaluatePilotConfiguration(
     );
     const invalidRecipeQuantities = input.recipeIngredients.filter(
         link => (
+            link.recipe_id === null
+            || link.ingredient_id === null
+            ||
             !Number.isFinite(link.quantity_required_oz)
             || link.quantity_required_oz <= 0
         )
     );
+    const squareMappingCounts = new Map<string, number>();
+
+    for (const item of input.menuItems) {
+        const squareId = item.square_item_id?.trim();
+
+        if (squareId) {
+            squareMappingCounts.set(
+                squareId,
+                (squareMappingCounts.get(squareId) ?? 0) + 1
+            );
+        }
+    }
+
+    const duplicateSquareMappings = [...squareMappingCounts]
+        .filter(([, count]) => count > 1)
+        .map(([squareId]) => squareId);
+    const recipeIngredientCounts = new Map<string, number>();
+
+    for (const link of input.recipeIngredients) {
+        if (link.recipe_id === null || link.ingredient_id === null) {
+            continue;
+        }
+
+        const key = `${link.recipe_id}:${link.ingredient_id}`;
+        recipeIngredientCounts.set(
+            key,
+            (recipeIngredientCounts.get(key) ?? 0) + 1
+        );
+    }
+
+    const duplicateRecipeIngredients = [...recipeIngredientCounts]
+        .filter(([, count]) => count > 1)
+        .map(([key]) => key);
     const mappedSquareIds = new Set(
         input.menuItems
             .map(item => item.square_item_id)
             .filter((id): id is string => Boolean(id))
+            .map(id => id.trim())
     );
     const liveSquareIds = new Set(input.squareVariationIds);
-    const unmappedSquareIds = input.squareVariationIds.filter(
+    const untrackedSquareIds = input.squareVariationIds.filter(
         id => !mappedSquareIds.has(id)
     );
     const staleMappings = input.menuItems.filter(
@@ -95,6 +161,10 @@ export function evaluatePilotConfiguration(
             Boolean(item.square_item_id)
             && !liveSquareIds.has(item.square_item_id as string)
         )
+    );
+    const checkpointIsValid = (
+        input.checkpointAt !== null
+        && !Number.isNaN(new Date(input.checkpointAt).getTime())
     );
 
     checks.push({
@@ -105,32 +175,53 @@ export function evaluatePilotConfiguration(
             : 'No ingredients were found.'
     });
     checks.push({
+        name: 'Tracked food menu loaded',
+        status: input.menuItems.length > 0 ? 'pass' : 'fail',
+        detail: input.menuItems.length > 0
+            ? `${input.menuItems.length} tracked food menu item(s) found.`
+            : 'No tracked food menu items were found.'
+    });
+    checks.push({
+        name: 'Square sync baseline',
+        status: checkpointIsValid ? 'pass' : 'fail',
+        detail: checkpointIsValid
+            ? `Order tracking starts from ${input.checkpointAt}.`
+            : 'Record the physical starting inventory, then run `npm run initialize-sync`.'
+    });
+    checks.push({
         name: 'GFS receiving codes',
-        status: missingCodes.length === 0 ? 'pass' : 'fail',
+        status: missingCodes.length === 0 ? 'pass' : 'warn',
         detail: missingCodes.length === 0
             ? 'Every ingredient has a receiving code.'
-            : `Missing codes: ${names(missingCodes, row => row.name)}.`
+            : `Optional pack receiving is unavailable for: ${names(missingCodes, row => row.name)}. Order deductions are unaffected.`
     });
     checks.push({
         name: 'Pack sizes',
-        status: missingPackSizes.length === 0 ? 'pass' : 'fail',
+        status: missingPackSizes.length === 0 ? 'pass' : 'warn',
         detail: missingPackSizes.length === 0
             ? 'Every ingredient has a positive pack size.'
-            : `Missing pack sizes: ${names(missingPackSizes, row => row.name)}.`
+            : `Optional pack receiving is unavailable for: ${names(missingPackSizes, row => row.name)}. Order deductions are unaffected.`
     });
     checks.push({
         name: 'Alert thresholds',
         status: missingThresholds.length === 0 ? 'pass' : 'fail',
         detail: missingThresholds.length === 0
-            ? 'Every ingredient has a low-stock threshold.'
-            : `Missing thresholds: ${names(missingThresholds, row => row.name)}.`
+            ? 'Every tracked ingredient has a restock threshold.'
+            : `Missing restock thresholds: ${names(missingThresholds, row => row.name)}.`
+    });
+    checks.push({
+        name: 'Maximum stock',
+        status: invalidMaximums.length === 0 ? 'pass' : 'fail',
+        detail: invalidMaximums.length === 0
+            ? 'Every tracked ingredient has a valid maximum above its threshold.'
+            : `Missing or invalid maximums: ${names(invalidMaximums, row => row.name)}.`
     });
     checks.push({
         name: 'Stock values',
         status: invalidStock.length === 0 ? 'pass' : 'fail',
         detail: invalidStock.length === 0
-            ? 'Every ingredient has a numeric stock value.'
-            : `Invalid stock: ${names(invalidStock, row => row.name)}.`
+            ? 'Every tracked ingredient has a non-negative numeric stock value.'
+            : `Invalid or negative stock: ${names(invalidStock, row => row.name)}.`
     });
     checks.push({
         name: 'Menu recipe mappings',
@@ -154,18 +245,32 @@ export function evaluatePilotConfiguration(
             : `${invalidRecipeQuantities.length} recipe link(s) have invalid quantities.`
     });
     checks.push({
-        name: 'Live Square coverage',
-        status: unmappedSquareIds.length === 0 ? 'pass' : 'fail',
-        detail: unmappedSquareIds.length === 0
-            ? 'Every live Square variation is mapped.'
-            : `Unmapped Square variation IDs: ${names(unmappedSquareIds, id => id)}.`
+        name: 'Unique Square mappings',
+        status: duplicateSquareMappings.length === 0 ? 'pass' : 'fail',
+        detail: duplicateSquareMappings.length === 0
+            ? 'Every Square variation maps to at most one tracked menu item.'
+            : `Duplicate Square variation IDs: ${names(duplicateSquareMappings, id => id)}.`
+    });
+    checks.push({
+        name: 'Unique recipe ingredients',
+        status: duplicateRecipeIngredients.length === 0 ? 'pass' : 'fail',
+        detail: duplicateRecipeIngredients.length === 0
+            ? 'Every recipe contains at most one row per ingredient.'
+            : `${duplicateRecipeIngredients.length} duplicate recipe/ingredient pair(s) found.`
+    });
+    checks.push({
+        name: 'Square tracking scope',
+        status: 'pass',
+        detail: untrackedSquareIds.length === 0
+            ? 'Every live Square variation is in the tracked menu scope.'
+            : `${untrackedSquareIds.length} live Square variation(s) are outside the tracked menu scope and will be ignored.`
     });
     checks.push({
         name: 'Stale Square mappings',
-        status: staleMappings.length === 0 ? 'pass' : 'warn',
+        status: staleMappings.length === 0 ? 'pass' : 'fail',
         detail: staleMappings.length === 0
             ? 'No stale menu mappings found.'
-            : `Not found in the live catalog: ${names(staleMappings, row => row.item_name)}.`
+            : `Tracked menu items not found in the live catalog: ${names(staleMappings, row => row.item_name)}.`
     });
 
     return checks;
@@ -188,7 +293,8 @@ async function assertOperationalTables(
         'processed_orders',
         'integration_checkpoints',
         'stock_receipts',
-        'low_stock_alerts'
+        'low_stock_alerts',
+        'inventory_adjustments'
     ];
 
     for (const tableName of tableNames) {
@@ -233,12 +339,13 @@ async function main() {
             ingredientsResult,
             menuItemsResult,
             recipeIngredientsResult,
-            locationsResult
+            locationsResult,
+            checkpointResult
         ] = await Promise.all([
             supabase
                 .from('ingredients')
                 .select(
-                    'id,name,gfs_code,current_stock_oz,pack_size_oz,low_stock_threshold_oz'
+                    'id,name,gfs_code,current_stock_oz,pack_size_oz,low_stock_threshold_oz,max_stock_oz'
                 ),
             supabase
                 .from('menu_items')
@@ -246,7 +353,11 @@ async function main() {
             supabase
                 .from('recipe_ingredients')
                 .select('recipe_id,ingredient_id,quantity_required_oz'),
-            square.locations.list()
+            square.locations.list(),
+            supabase.rpc(
+                'get_integration_checkpoint',
+                { p_name: 'square-completed-orders' }
+            )
         ]);
 
         if (ingredientsResult.error) {
@@ -266,6 +377,17 @@ async function main() {
         }
         if (!locationsResult.locations?.length) {
             throw new Error('Square returned no production locations');
+        }
+        if (checkpointResult.error) {
+            throw new Error(
+                `Could not read Square sync baseline: ${checkpointResult.error.message}`
+            );
+        }
+        if (
+            checkpointResult.data !== null
+            && typeof checkpointResult.data !== 'string'
+        ) {
+            throw new Error('Supabase returned an invalid Square sync baseline');
         }
 
         const squareVariationIds: string[] = [];
@@ -291,7 +413,8 @@ async function main() {
             ingredients: ingredientsResult.data ?? [],
             menuItems: menuItemsResult.data ?? [],
             recipeIngredients: recipeIngredientsResult.data ?? [],
-            squareVariationIds
+            squareVariationIds,
+            checkpointAt: checkpointResult.data
         });
 
         console.log(

@@ -28,12 +28,20 @@ export type SupabaseRpcClient = {
 };
 
 export function buildOrderLinePayload(
-    lineItems: SquareLineItem[] | null | undefined
+    lineItems: SquareLineItem[] | null | undefined,
+    trackedSquareItemIds?: ReadonlySet<string>
 ): OrderLinePayload[] {
     const payload: OrderLinePayload[] = [];
 
     for (const item of lineItems ?? []) {
         if (!item.catalogObjectId) {
+            continue;
+        }
+
+        if (
+            trackedSquareItemIds
+            && !trackedSquareItemIds.has(item.catalogObjectId)
+        ) {
             continue;
         }
 
@@ -56,13 +64,17 @@ export function buildOrderLinePayload(
 
 export async function processOrderAtomically(
     supabase: SupabaseRpcClient,
-    order: SquareOrder
+    order: SquareOrder,
+    trackedSquareItemIds?: ReadonlySet<string>
 ): Promise<'processed' | 'duplicate' | 'skipped'> {
     if (!order.id) {
         throw new Error('Square returned an order without an ID');
     }
 
-    const lineItems = buildOrderLinePayload(order.lineItems);
+    const lineItems = buildOrderLinePayload(
+        order.lineItems,
+        trackedSquareItemIds
+    );
 
     if (lineItems.length === 0) {
         return 'skipped';
@@ -83,4 +95,3 @@ export async function processOrderAtomically(
 
     return data === true ? 'processed' : 'duplicate';
 }
-
