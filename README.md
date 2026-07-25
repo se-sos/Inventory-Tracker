@@ -96,6 +96,9 @@ npm run sync-catalog
 # Receive three packs and record who received them
 npm run receive-stock -- BEAN-001 3 Sean
 
+# Print the owner's current stock and reorder report (read-only)
+npm run inventory-status
+
 # Send one digest for newly low ingredients
 npm run alerts
 
