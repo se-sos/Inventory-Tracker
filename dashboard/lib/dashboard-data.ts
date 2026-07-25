@@ -91,6 +91,28 @@ function buildInventoryItem(row: IngredientRow): InventoryItem {
   };
 }
 
+async function loadActiveIngredients(
+  supabase: ReturnType<typeof createSupabaseAdminClient>,
+) {
+  const query = () => supabase
+    .from("ingredients")
+    .select(
+      "id,name,current_stock_oz,low_stock_threshold_oz,max_stock_oz,gfs_code,pack_size_oz",
+    );
+  const activeResult = await query()
+    .eq("is_active", true)
+    .order("name");
+
+  if (
+    activeResult.error?.code === "42703"
+    || activeResult.error?.message.includes("is_active")
+  ) {
+    return query().order("name");
+  }
+
+  return activeResult;
+}
+
 export async function getDashboardData(): Promise<DashboardData> {
   const supabase = createSupabaseAdminClient();
   const [
@@ -99,12 +121,7 @@ export async function getDashboardData(): Promise<DashboardData> {
     receiptResult,
     checkpointResult,
   ] = await Promise.all([
-    supabase
-      .from("ingredients")
-      .select(
-        "id,name,current_stock_oz,low_stock_threshold_oz,max_stock_oz,gfs_code,pack_size_oz",
-      )
-      .order("name"),
+    loadActiveIngredients(supabase),
     supabase
       .from("inventory_adjustments")
       .select(

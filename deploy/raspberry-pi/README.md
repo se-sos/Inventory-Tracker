@@ -28,6 +28,10 @@ Create:
 Use `dashboard.env.example` and `sync.env.example` as templates. Lock both
 files so only root can read them.
 
+`DASHBOARD_ALLOW_WRITES` defaults to the safe, read-only state. Keep it
+`false` until `add_owner_setup_controls.sql` is installed and the owner has
+reviewed `/setup`. Follow `OWNER_SETUP_ROLLOUT.md` for the full rollout.
+
 ## Services
 
 - `ghost-inventory-dashboard.service` keeps the owner website running.

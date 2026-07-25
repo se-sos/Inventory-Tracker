@@ -6,6 +6,7 @@ import {
   updateIngredientAction,
 } from "./actions";
 import { getDashboardSession } from "@/lib/auth";
+import { dashboardWritesAreEnabled } from "@/lib/mutation-mode";
 import {
   getDashboardData,
   InventoryItem,
@@ -72,6 +73,7 @@ export default async function Home({
   const editId = Number(single(params.edit));
   const message = single(params.message);
   const error = single(params.error);
+  const readOnly = !dashboardWritesAreEnabled();
   const data = await getDashboardData();
 
   const reorderItems = data.items.filter(
@@ -111,6 +113,9 @@ export default async function Home({
           </div>
         </div>
         <div className="topbar-actions">
+          <Link className="secondary-button" href="/setup">
+            Owner setup
+          </Link>
           <div className="sync-copy">
             <span className="sync-dot" aria-hidden="true" />
             <span>
@@ -140,6 +145,12 @@ export default async function Home({
 
       {message && <div className="notice success">{message}</div>}
       {error && <div className="notice error">{error}</div>}
+      {readOnly && (
+        <div className="notice info">
+          <strong>Read-only demo mode.</strong> Inventory updates and
+          deliveries are locked, so this view cannot change live data.
+        </div>
+      )}
 
       <section className="metric-grid" aria-label="Inventory summary">
         <article className="metric-card metric-primary">
@@ -322,7 +333,11 @@ export default async function Home({
                   type="number"
                 />
               </label>
-              <button className="primary-button" type="submit">
+              <button
+                className="primary-button"
+                disabled={readOnly}
+                type="submit"
+              >
                 Record delivery
               </button>
             </form>
@@ -434,7 +449,11 @@ export default async function Home({
                 <Link className="secondary-button" href="/#all-inventory">
                   Cancel
                 </Link>
-                <button className="primary-button" type="submit">
+                <button
+                  className="primary-button"
+                  disabled={readOnly}
+                  type="submit"
+                >
                   Save changes
                 </button>
               </div>

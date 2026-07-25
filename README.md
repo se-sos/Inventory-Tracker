@@ -9,6 +9,11 @@ Raspberry Pi at the store and provides reorder recommendations, physical-count
 corrections, delivery intake, and an audit trail. Raspberry Pi service examples
 are in `deploy/raspberry-pi/`.
 
+The dashboard also includes a read-only-by-default Owner Setup area for
+ingredients, tracked food items, recipe amounts, and configuration validation.
+Follow `OWNER_SETUP_ROLLOUT.md`; do not enable writes before
+`add_owner_setup_controls.sql` and the read-only review are complete.
+
 ## What the pilot does
 
 - Reads every page of completed Square orders.
@@ -47,6 +52,7 @@ order:
 4. `add_low_stock_alerts.sql`
 5. `add_owner_inventory_controls.sql`
 6. `harden_inventory_mappings.sql`
+7. `add_owner_setup_controls.sql`
 
 For the existing Ghost Coffee database, where the first three pilot migrations
 are already installed, run:
@@ -54,6 +60,7 @@ are already installed, run:
 1. `allow_untracked_square_items.sql`
 2. `add_owner_inventory_controls.sql`
 3. `harden_inventory_mappings.sql`
+4. `add_owner_setup_controls.sql`
 
 The existing `ingredients`, `menu_items`, `recipes`, and
 `recipe_ingredients` tables must already exist.

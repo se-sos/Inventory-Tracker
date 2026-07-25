@@ -311,6 +311,44 @@ async function assertOperationalTables(
     }
 }
 
+async function loadActiveIngredientsForPreflight(
+    supabase: ReturnType<typeof createSupabaseAdminClient>
+) {
+    const select = () => supabase
+        .from('ingredients')
+        .select(
+            'id,name,gfs_code,current_stock_oz,pack_size_oz,low_stock_threshold_oz,max_stock_oz'
+        );
+    const activeResult = await select().eq('is_active', true);
+
+    if (
+        activeResult.error?.code === '42703'
+        || activeResult.error?.message.includes('is_active')
+    ) {
+        return select();
+    }
+
+    return activeResult;
+}
+
+async function loadActiveMenuItemsForPreflight(
+    supabase: ReturnType<typeof createSupabaseAdminClient>
+) {
+    const select = () => supabase
+        .from('menu_items')
+        .select('id,item_name,square_item_id,recipe_id');
+    const activeResult = await select().eq('is_active', true);
+
+    if (
+        activeResult.error?.code === '42703'
+        || activeResult.error?.message.includes('is_active')
+    ) {
+        return select();
+    }
+
+    return activeResult;
+}
+
 async function main() {
     try {
         const squareEnvironment = requireEnvironmentVariable(
@@ -342,14 +380,8 @@ async function main() {
             locationsResult,
             checkpointResult
         ] = await Promise.all([
-            supabase
-                .from('ingredients')
-                .select(
-                    'id,name,gfs_code,current_stock_oz,pack_size_oz,low_stock_threshold_oz,max_stock_oz'
-                ),
-            supabase
-                .from('menu_items')
-                .select('id,item_name,square_item_id,recipe_id'),
+            loadActiveIngredientsForPreflight(supabase),
+            loadActiveMenuItemsForPreflight(supabase),
             supabase
                 .from('recipe_ingredients')
                 .select('recipe_id,ingredient_id,quantity_required_oz'),

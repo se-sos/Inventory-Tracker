@@ -33,9 +33,21 @@ const square = new SquareClient({
 const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
 async function getTrackedSquareItemIds(): Promise<Set<string>> {
-    const { data, error } = await supabase
+    let result = await supabase
         .from('menu_items')
-        .select('square_item_id');
+        .select('square_item_id')
+        .eq('is_active', true);
+
+    if (
+        result.error?.code === '42703'
+        || result.error?.message.includes('is_active')
+    ) {
+        result = await supabase
+            .from('menu_items')
+            .select('square_item_id');
+    }
+
+    const { data, error } = result;
 
     if (error) {
         throw new Error(

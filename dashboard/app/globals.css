@@ -790,6 +790,460 @@ textarea:focus {
   margin-top: 4px;
 }
 
+.notice.info {
+  background: #edf3f0;
+  border-color: #bdd0c5;
+  color: #315847;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.setup-shell {
+  max-width: 1260px;
+}
+
+.setup-intro {
+  padding-bottom: 42px;
+}
+
+.setup-status-grid {
+  display: grid;
+  gap: 14px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.setup-status-card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  display: grid;
+  min-height: 148px;
+  padding: 20px;
+}
+
+.setup-status-card > span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.setup-status-card > strong {
+  align-self: end;
+  font-size: 38px;
+  letter-spacing: -0.055em;
+}
+
+.setup-status-card > p {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 5px 0 0;
+}
+
+.setup-status-card.status-error {
+  background: #fff3ef;
+  border-color: #efc8bc;
+}
+
+.setup-status-card.status-error > strong {
+  color: #a3472e;
+}
+
+.setup-status-card.status-ready {
+  background: var(--forest);
+  border-color: var(--forest);
+  color: white;
+}
+
+.setup-status-card.status-ready > span,
+.setup-status-card.status-ready > p {
+  color: #c9d9d0;
+}
+
+.validation-panel {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  margin-top: 18px;
+  padding: 24px;
+}
+
+.validation-panel .section-heading {
+  align-items: center;
+}
+
+.validation-badge {
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 11px;
+}
+
+.validation-badge.has-errors {
+  background: #fff0e9;
+  color: #963c27;
+}
+
+.validation-badge.ready {
+  background: #e2f0e6;
+  color: #25603b;
+}
+
+.validation-list {
+  display: grid;
+  gap: 8px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.validation-list li {
+  align-items: start;
+  border-radius: 10px;
+  display: grid;
+  gap: 12px;
+  grid-template-columns: 62px 1fr;
+  padding: 11px 13px;
+}
+
+.validation-list li.error {
+  background: #fff2ee;
+  color: #8b3825;
+}
+
+.validation-list li.warning {
+  background: #fff8e8;
+  color: #76551a;
+}
+
+.validation-list li > span {
+  font-size: 10px;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.validation-list li > p,
+.validation-clear p {
+  font-size: 12px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.validation-clear {
+  background: #edf6f0;
+  border-radius: 12px;
+  color: #285b39;
+  padding: 18px;
+}
+
+.validation-clear p {
+  margin-top: 5px;
+}
+
+.setup-section {
+  padding-top: 54px;
+}
+
+.setup-heading {
+  align-items: center;
+}
+
+.section-count {
+  background: var(--blue-soft);
+  border-radius: 999px;
+  color: var(--forest);
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 11px;
+}
+
+.setup-create-card,
+.setup-record {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+}
+
+.setup-create-card {
+  border-color: #a9c3b2;
+  margin-bottom: 12px;
+}
+
+.setup-create-card > summary,
+.setup-record > summary {
+  align-items: center;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  list-style: none;
+  padding: 18px 20px;
+}
+
+.setup-create-card > summary::-webkit-details-marker,
+.setup-record > summary::-webkit-details-marker {
+  display: none;
+}
+
+.setup-create-card > summary > span:first-child,
+.setup-record > summary > span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.setup-create-card > summary strong,
+.setup-record > summary strong {
+  font-size: 14px;
+}
+
+.setup-create-card > summary small,
+.setup-record > summary small {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.summary-action {
+  color: var(--forest-2);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.setup-create-card[open] > summary,
+.setup-record[open] > summary {
+  border-bottom: 1px solid var(--line);
+}
+
+.setup-record-list {
+  display: grid;
+  gap: 8px;
+}
+
+.setup-form,
+.record-editor {
+  margin: 0;
+  padding: 22px;
+}
+
+.record-editor > .setup-form {
+  padding: 0;
+}
+
+.form-row.three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.form-submit-row {
+  align-items: center;
+  display: flex;
+  gap: 20px;
+  justify-content: space-between;
+  margin-top: 4px;
+}
+
+.form-submit-row small {
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.catalog-bar {
+  align-items: center;
+  background: var(--forest);
+  border-radius: 15px;
+  color: white;
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  padding: 18px 20px;
+}
+
+.catalog-bar p {
+  color: #c9d9d0;
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 5px 0 0;
+}
+
+.recipe-fieldset {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  margin: 4px 0 0;
+  padding: 16px;
+}
+
+.recipe-fieldset legend {
+  color: #3e4941;
+  font-size: 12px;
+  font-weight: 800;
+  padding: 0 6px;
+}
+
+.recipe-lines {
+  display: grid;
+  gap: 9px;
+}
+
+.recipe-line {
+  align-items: center;
+  display: grid;
+  gap: 9px;
+  grid-template-columns: minmax(220px, 1fr) 170px auto;
+}
+
+.recipe-line label {
+  display: block;
+}
+
+.recipe-line select,
+.recipe-line input {
+  width: 100%;
+}
+
+.amount-field {
+  position: relative;
+}
+
+.amount-field input {
+  padding-right: 38px;
+}
+
+.amount-field > span:last-child {
+  color: var(--muted);
+  font-size: 11px;
+  position: absolute;
+  right: 12px;
+  top: 14px;
+}
+
+.remove-line-button {
+  background: transparent;
+  border: 0;
+  color: #9a4a35;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 750;
+  padding: 10px 4px;
+}
+
+.remove-line-button:disabled {
+  color: #aeb6b0;
+}
+
+.add-line-button {
+  cursor: pointer;
+  margin-top: 11px;
+  min-height: 36px;
+}
+
+.deduction-preview {
+  background: #edf3ef;
+  border-radius: 10px;
+  padding: 13px 15px;
+}
+
+.deduction-preview strong {
+  color: var(--forest);
+  font-size: 11px;
+}
+
+.deduction-preview p {
+  color: #536158;
+  font-size: 11px;
+  line-height: 1.5;
+  margin: 4px 0 0;
+}
+
+.archive-panel {
+  border-top: 1px solid var(--line);
+  margin-top: 22px;
+  padding-top: 16px;
+}
+
+.archive-panel > summary {
+  color: #94452f;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.archive-panel form {
+  background: #fff4f0;
+  border-radius: 10px;
+  display: grid;
+  gap: 11px;
+  margin-top: 12px;
+  padding: 15px;
+}
+
+.archive-panel p {
+  color: #74564e;
+  font-size: 11px;
+  line-height: 1.45;
+  margin: 0;
+}
+
+.archive-panel label {
+  display: grid;
+  font-size: 11px;
+  font-weight: 750;
+  gap: 6px;
+}
+
+.danger-button {
+  background: #9a432d;
+  border: 1px solid #9a432d;
+  border-radius: 9px;
+  color: white;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 800;
+  justify-self: start;
+  min-height: 38px;
+  padding: 0 14px;
+}
+
+.setup-activity-section {
+  padding-bottom: 20px;
+}
+
+.setup-activity-list {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 15px;
+  list-style: none;
+  margin: 0;
+  padding: 0 20px;
+}
+
+.setup-activity-list li {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  padding: 15px 0;
+}
+
+.setup-activity-list li + li {
+  border-top: 1px solid var(--line);
+}
+
+.setup-activity-list li > div {
+  display: grid;
+  gap: 3px;
+}
+
+.setup-activity-list strong {
+  font-size: 12px;
+}
+
+.setup-activity-list span,
+.setup-activity-list small {
+  color: var(--muted);
+  font-size: 10px;
+}
+
 @media (max-width: 1050px) {
   .reorder-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -801,6 +1255,10 @@ textarea:focus {
 
   .side-column {
     grid-template-columns: 1fr 1fr;
+  }
+
+  .setup-status-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -859,6 +1317,28 @@ textarea:focus {
 
   .form-row {
     grid-template-columns: 1fr;
+  }
+
+  .form-row.three,
+  .setup-status-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .recipe-line {
+    align-items: stretch;
+    grid-template-columns: 1fr;
+  }
+
+  .catalog-bar,
+  .form-submit-row,
+  .setup-activity-list li {
+    align-items: start;
+    flex-direction: column;
+  }
+
+  .catalog-bar,
+  .form-submit-row {
+    gap: 14px;
   }
 
   .login-shell {
