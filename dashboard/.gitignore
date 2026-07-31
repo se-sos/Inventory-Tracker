@@ -44,15 +44,11 @@ tsconfig.tsbuildinfo
 /work/
 
 # Unused Cloudflare starter files retained locally by OneDrive
-/.openai/
 /app/_sites-preview/
-/build/
 /db/
 /drizzle/
 /examples/
 /tests/
-/worker/
-/vite.config.ts
 /drizzle.config.ts
 /app/chatgpt-auth.ts
 /public/favicon.svg
