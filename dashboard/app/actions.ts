@@ -2,6 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import {
   clearDashboardSession,
   createDashboardSession,
@@ -11,6 +12,10 @@ import {
 import { createSupabaseAdminClient } from "@/lib/supabase";
 import { fetchSquareCatalogVariations } from "@/lib/square-catalog";
 import { dashboardWritesAreEnabled } from "@/lib/mutation-mode";
+import {
+  loginRateLimitKey,
+  ownerLoginRateLimiter,
+} from "@/lib/login-rate-limit";
 
 function formText(formData: FormData, name: string): string {
   return String(formData.get(name) ?? "").trim();
@@ -87,7 +92,15 @@ function requireWriteMode(area: "dashboard" | "setup") {
 export async function loginAction(formData: FormData) {
   const email = formText(formData, "email");
   const password = formText(formData, "password");
+  const attemptKey = loginRateLimitKey(await headers());
+  const currentLimit = ownerLoginRateLimiter.check(attemptKey);
   let credentialsAreValid: boolean;
+
+  if (currentLimit.limited) {
+    redirect(
+      "/login?error=Too%20many%20sign-in%20attempts.%20Please%20try%20again%20in%2015%20minutes",
+    );
+  }
 
   try {
     credentialsAreValid = verifyDashboardCredentials(email, password);
@@ -98,9 +111,18 @@ export async function loginAction(formData: FormData) {
   }
 
   if (!credentialsAreValid) {
+    const updatedLimit = ownerLoginRateLimiter.recordFailure(attemptKey);
+
+    if (updatedLimit.limited) {
+      redirect(
+        "/login?error=Too%20many%20sign-in%20attempts.%20Please%20try%20again%20in%2015%20minutes",
+      );
+    }
+
     redirect("/login?error=Invalid%20email%20or%20password");
   }
 
+  ownerLoginRateLimiter.reset(attemptKey);
   await createDashboardSession(email);
   redirect("/");
 }

@@ -41,7 +41,10 @@ export default async function LoginPage({
           <div>
             <p className="eyebrow">Owner access</p>
             <h2>Sign in</h2>
-            <p>Use the account configured for this store.</p>
+            <p>
+              Use the owner account configured for this store. Repeated failed
+              attempts temporarily pause sign-in.
+            </p>
           </div>
           {error && <div className="notice error">{error}</div>}
           <label>

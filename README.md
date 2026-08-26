@@ -11,8 +11,14 @@ are in `deploy/raspberry-pi/`.
 
 The dashboard also includes a read-only-by-default Owner Setup area for
 ingredients, tracked food items, recipe amounts, and configuration validation.
-Follow `OWNER_SETUP_ROLLOUT.md`; do not enable writes before
-`add_owner_setup_controls.sql` and the read-only review are complete.
+Follow `OWNER_SETUP_ROLLOUT.md`; do not enable writes until the intended live
+database is directly verified and the owner approves the operating values.
+The presence of migration files or a completed code review is not proof that a
+live database change was applied.
+
+Use `OWNER_MEETING_CHECKLIST.md` for the store-fact validation session. It
+separates the answers required from the owner from Sean's later technical
+rollout steps.
 
 ## What the pilot does
 
@@ -135,8 +141,9 @@ recipes and deliveries. Ghost Coffee's low-stock decisions should use
 
 ## Launch status
 
-Local automated verification is green. Production still requires the pending
-SQL files to be applied, starting stock and owner reorder settings to be
-confirmed, the sync baseline to be initialized, and the live checks in
-`PILOT_CHECKLIST.md` to pass. The owner web dashboard and daily digest are the
-next product phase.
+The owner dashboard is implemented, but a hosted read-only review is not a
+completed store rollout. Production still requires the live database state to
+be verified, starting stock and owner reorder settings to be confirmed, the
+Raspberry Pi to be installed, the sync baseline to be initialized, and the live
+checks in `PILOT_CHECKLIST.md` to pass. Automatic processing stays disabled
+until those checks and owner approval are complete.

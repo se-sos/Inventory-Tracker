@@ -10,6 +10,7 @@
     "build": "vinext build",
     "start": "vinext start --host 0.0.0.0",
     "lint": "eslint app lib next.config.ts",
+    "test": "node --experimental-strip-types --test lib/auth-core.test.ts lib/login-rate-limit.test.ts lib/mutation-policy.test.ts app/write-actions.test.ts",
     "auth:hash": "node scripts/hash-password.mjs"
   },
   "dependencies": {
