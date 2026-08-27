@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { loginAction } from "../actions";
 import { getDashboardSession } from "@/lib/auth";
+import { demoModeIsEnabled } from "@/lib/demo-mode";
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -16,6 +17,7 @@ export default async function LoginPage({
   const params = await searchParams;
   const rawError = params.error;
   const error = Array.isArray(rawError) ? rawError[0] : rawError;
+  const demoMode = demoModeIsEnabled();
 
   return (
     <main className="login-shell">
@@ -32,18 +34,21 @@ export default async function LoginPage({
           <h2>Start each shift knowing what is ready—and what is running low.</h2>
         </div>
         <p className="login-footnote">
-          Private owner access · Square remains read-only
+          {demoMode
+            ? "Shareable demo · Sample data only"
+            : "Private owner access · Square remains read-only"}
         </p>
       </section>
 
       <section className="login-panel">
         <form action={loginAction} className="login-form">
           <div>
-            <p className="eyebrow">Owner access</p>
+            <p className="eyebrow">{demoMode ? "Demo access" : "Owner access"}</p>
             <h2>Sign in</h2>
             <p>
-              Use the owner account configured for this store. Repeated failed
-              attempts temporarily pause sign-in.
+              {demoMode
+                ? "Sign in to explore the sample dashboard. Repeated failed attempts temporarily pause sign-in."
+                : "Use the owner account configured for this store. Repeated failed attempts temporarily pause sign-in."}
             </p>
           </div>
           {error && <div className="notice error">{error}</div>}

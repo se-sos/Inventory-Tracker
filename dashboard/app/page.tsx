@@ -6,6 +6,7 @@ import {
   updateIngredientAction,
 } from "./actions";
 import { getDashboardSession } from "@/lib/auth";
+import { demoModeIsEnabled } from "@/lib/demo-mode";
 import { dashboardWritesAreEnabled } from "@/lib/mutation-mode";
 import {
   getDashboardData,
@@ -73,6 +74,7 @@ export default async function Home({
   const editId = Number(single(params.edit));
   const message = single(params.message);
   const error = single(params.error);
+  const demoMode = demoModeIsEnabled();
   const readOnly = !dashboardWritesAreEnabled();
   const data = await getDashboardData();
 
@@ -119,7 +121,7 @@ export default async function Home({
           <div className="sync-copy">
             <span className="sync-dot" aria-hidden="true" />
             <span>
-              <small>Last Square update</small>
+              <small>{demoMode ? "Sample sync time" : "Last Square update"}</small>
               <strong>{dateTime(data.lastSquareSyncAt)}</strong>
             </span>
           </div>
@@ -134,8 +136,9 @@ export default async function Home({
           <p className="eyebrow">Today’s inventory</p>
           <h2>See what needs attention before service.</h2>
           <p>
-            Stock estimates use recorded deliveries, physical counts, and
-            completed Square food sales.
+            {demoMode
+              ? "Explore a realistic sample without connecting to the store’s accounts."
+              : "Stock estimates use recorded deliveries, physical counts, and completed Square food sales."}
           </p>
         </div>
         <p className="updated">
@@ -153,7 +156,13 @@ export default async function Home({
           <strong>Nothing changed.</strong> {error}
         </div>
       )}
-      {readOnly && (
+      {demoMode ? (
+        <div className="notice info" role="status">
+          <strong>Sample-data demo.</strong> This page is not connected to
+          Ghost Coffee’s Supabase database or Square account. Every change is
+          locked.
+        </div>
+      ) : readOnly && (
         <div className="notice info" role="status">
           <strong>Safe preview.</strong> You can explore the dashboard, but
           inventory changes and deliveries are locked.

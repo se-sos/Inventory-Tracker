@@ -10,6 +10,7 @@ import {
 } from "../actions";
 import { RecipeEditor } from "./recipe-editor";
 import { getDashboardSession } from "@/lib/auth";
+import { demoModeIsEnabled } from "@/lib/demo-mode";
 import { dashboardWritesAreEnabled } from "@/lib/mutation-mode";
 import {
   getOwnerSetupData,
@@ -165,6 +166,7 @@ export default async function SetupPage({
   const params = await searchParams;
   const message = single(params.message);
   const error = single(params.error);
+  const demoMode = demoModeIsEnabled();
   const readOnly = !dashboardWritesAreEnabled();
   const data = await getOwnerSetupData();
   const validationErrors = data.validationIssues.filter(
@@ -221,7 +223,13 @@ export default async function SetupPage({
           <strong>Nothing changed.</strong> {error}
         </div>
       )}
-      {readOnly && (
+      {demoMode ? (
+        <div className="notice info" role="status">
+          <strong>Sample-data demo.</strong> These ingredients and food items
+          are examples only. Supabase and Square are disconnected, and every
+          change is locked.
+        </div>
+      ) : readOnly && (
         <div className="notice info" role="status">
           <strong>Safe preview.</strong> You can explore every form, but all
           save, stop, and refresh buttons are locked.

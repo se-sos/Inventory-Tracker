@@ -37,6 +37,14 @@ Do not paste owner credentials into repository documentation, screenshots,
 issues, or project chats. Share a temporary password through a separate secure
 channel and rotate it if it is exposed.
 
+## Shareable demo mode
+
+Set `DASHBOARD_DEMO_MODE=true` and `DASHBOARD_ALLOW_WRITES=false` to run the
+dashboard with built-in sample inventory, recipes, and activity. Demo mode
+does not create a Supabase client or call Square, and it blocks every write
+even if the write flag is accidentally enabled. Remove Supabase and Square
+credentials from any environment used for a public demo.
+
 Login attempts are paused for 15 minutes after five failures from the same
 detected network address. This protection is intentionally dependency-free and
 works well for the single Raspberry Pi process. It is best-effort on distributed

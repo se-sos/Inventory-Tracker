@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "./supabase";
+import { getDemoDashboardData } from "./demo-data";
+import { demoModeIsEnabled } from "./demo-mode";
 
 export type InventoryItem = {
   id: number;
@@ -114,6 +116,10 @@ async function loadActiveIngredients(
 }
 
 export async function getDashboardData(): Promise<DashboardData> {
+  if (demoModeIsEnabled()) {
+    return getDemoDashboardData();
+  }
+
   const supabase = createSupabaseAdminClient();
   const [
     ingredientResult,

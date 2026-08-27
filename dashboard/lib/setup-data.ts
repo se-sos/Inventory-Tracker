@@ -1,6 +1,8 @@
 import "server-only";
 
 import { createSupabaseAdminClient } from "./supabase";
+import { getDemoOwnerSetupData } from "./demo-data";
+import { demoModeIsEnabled } from "./demo-mode";
 
 export type SetupIngredient = {
   id: number;
@@ -250,6 +252,10 @@ function localValidation(
 }
 
 export async function getOwnerSetupData(): Promise<OwnerSetupData> {
+  if (demoModeIsEnabled()) {
+    return getDemoOwnerSetupData();
+  }
+
   const supabase = createSupabaseAdminClient();
   const [
     ingredientResult,
